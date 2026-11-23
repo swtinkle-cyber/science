@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>형성평가 - 전류, 전압, 저항</title>
+<style>
+:root { --primary:#2563eb; --bg:#f3f4f6; --card:#ffffff; --fg:#111827; --sub:#6b7280; --border:#d1d5db; --ok:#15803d; --okbg:#f0fdf4; --no:#b91c1c; --nobg:#fef2f2; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif; background:var(--bg); color:var(--fg); line-height:1.6; }
+#app { max-width:760px; margin:0 auto; padding:16px; }
+h1 { font-size:22px; margin:8px 0 4px; }
+h2 { font-size:16px; margin:0 0 8px; }
+.sub { color:var(--sub); font-size:13px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; margin-top:12px; }
+.tree-mid { margin-top:8px; font-weight:600; }
+.tree-small { margin-left:24px; font-weight:400; }
+label.chk { display:flex; align-items:center; gap:8px; padding:4px 0; cursor:pointer; }
+.count { color:var(--sub); font-size:12px; margin-left:auto; }
+.row { display:flex; flex-wrap:wrap; gap:8px 16px; }
+button { font:inherit; cursor:pointer; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--fg); padding:10px 16px; }
+button.primary { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600; }
+button:disabled { cursor:default; opacity:.6; }
+button.link { border:none; background:none; color:var(--primary); padding:0; font-size:13px; }
+.badge { display:inline-block; font-size:12px; border:1px solid var(--border); border-radius:4px; padding:1px 8px; margin-right:6px; }
+.badge.type { border-color:var(--primary); color:var(--primary); }
+.progress { height:6px; background:#e5e7eb; border-radius:3px; overflow:hidden; margin-top:8px; }
+.progress > div { height:100%; background:var(--primary); }
+.qtext { font-size:17px; font-weight:600; margin:12px 0; }
+.opt { display:block; width:100%; text-align:left; margin-top:8px; }
+.opt.sel { border-color:var(--primary); outline:2px solid var(--primary); }
+.opt.right { border-color:var(--ok); background:var(--okbg); }
+.opt.wrong { border-color:var(--no); background:var(--nobg); }
+.oxwrap { display:flex; gap:12px; }
+.oxwrap .opt { text-align:center; font-size:28px; font-weight:700; padding:20px 0; }
+input[type=text], textarea { width:100%; font:inherit; padding:10px; border:1px solid var(--border); border-radius:8px; }
+textarea { min-height:110px; resize:vertical; }
+.fb { margin-top:12px; padding:12px; border-radius:8px; border:1px solid var(--border); }
+.fb.ok { border-color:var(--ok); background:var(--okbg); }
+.fb.no { border-color:var(--no); background:var(--nobg); }
+.fb .verdict { font-weight:700; }
+.fb.ok .verdict { color:var(--ok); }
+.fb.no .verdict { color:var(--no); }
+.actions { display:flex; justify-content:space-between; gap:8px; margin-top:16px; }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+th, td { border-bottom:1px solid var(--border); padding:6px 4px; text-align:left; }
+td.num, th.num { text-align:right; }
+.score { font-size:32px; font-weight:700; }
+ul.crit { margin:6px 0; padding-left:0; list-style:none; }
+.review { border-top:1px solid var(--border); padding:10px 0; font-size:14px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =====================================================================
+   문항 데이터 영역
+   - UNITS: 대단원 > 중단원 > 소단원 구조
+   - QUESTIONS: 문항 목록. unit 값은 소단원 id와 일치해야 합니다.
+     type: "ox"(OX퀴즈) | "mc"(5지선다형) | "short"(단답형) | "essay"(서술형)
+     ox    : answer = "O" 또는 "X"
+     mc    : options = 보기 5개, answer = 정답 보기의 순서(0부터 시작)
+     short : accept = 정답으로 인정할 답 목록
+     essay : model = 모범 답안, criteria = 채점 기준, keywords = 기준별 핵심어 목록
+   ===================================================================== */
+const UNITS = [
+  {
+    "id": "U2",
+    "title": "2. 전류, 전압, 저항",
+    "children": [
+      {
+        "id": "U2-1",
+        "title": "1. 이동하는 전하",
+        "children": [
+          {
+            "id": "U2-1-01",
+            "title": "01. 이동하는 전하"
+          },
+          {
+            "id": "U2-1-02",
+            "title": "02. 전류의 측정"
+          }
+        ]
+      },
+      {
+        "id": "U2-2",
+        "title": "2. 전압과 전류",
+        "children": [
+          {
+            "id": "U2-2-01",
+            "title": "01. 전압"
+          },
+          {
+            "id": "U2-2-02",
+            "title": "02. 전압의 측정"
+          }
+        ]
+      },
+      {
+        "id": "U2-3",
+        "title": "3. 저항과 옴의 법칙",
+        "children": [
+          {
+            "id": "U2-3-01",
+            "title": "01. 전기 저항"
+          },
+          {
+            "id": "U2-3-02",
+            "title": "02. 옴의 법칙"
+          }
+        ]
+      },
+      {
+        "id": "U2-4",
+        "title": "4. 저항의 연결",
+        "children": [
+          {
+            "id": "U2-4-01",
+            "title": "01. 저항의 직렬연결"
+          },
+          {
+            "id": "U2-4-02",
+            "title": "02. 저항의 병렬연결"
+          }
+        ]
+      }
+    ]
+  }
+];
+const QUESTIONS = [
+  {
+    "unit": "U2-1-01",
+    "type": "ox",
+    "q": "전류는 전하의 흐름이다.",
+    "answer": "O",
+    "exp": "전류는 전하가 한쪽 방향으로 이동하는 흐름입니다.",
+    "id": "Q001"
+  },
+  {
+    "unit": "U2-1-01",
+    "type": "ox",
+    "q": "전지를 연결한 도선에서 전자는 전지의 (+)극 쪽에서 (-)극 쪽으로 이동한다.",
+    "answer": "X",
+    "exp": "전자는 전지의 (-)극 쪽에서 (+)극 쪽으로 이동합니다.",
+    "id": "Q002"
+  },
+  {
+    "unit": "U2-1-01",
+    "type": "mc",
+    "q": "전지를 연결한 도선에서 전류의 방향과 전자의 이동 방향을 옳게 짝 지은 것은?",
+    "options": [
+      "전류: (+)극 → (-)극, 전자: (-)극 → (+)극",
+      "전류: (+)극 → (-)극, 전자: (+)극 → (-)극",
+      "전류: (-)극 → (+)극, 전자: (+)극 → (-)극",
+      "전류: (-)극 → (+)극, 전자: (-)극 → (+)극",
+      "전류와 전자 모두 일정한 방향 없이 이동한다."
+    ],
+    "answer": 0,
+    "exp": "전류는 전지의 (+)극에서 (-)극 쪽으로 흐르고, 전자는 (-)극에서 (+)극 쪽으로 이동합니다. 두 방향은 서로 반대입니다.",
+    "id": "Q003"
+  },
+  {
+    "unit": "U2-1-01",
+    "type": "mc",
+    "q": "전류가 흐르지 않을 때 도선 속 전자의 모습으로 옳은 것은?",
+    "options": [
+      "전자가 모두 정지해 있다.",
+      "전자가 모두 한쪽 방향으로 이동한다.",
+      "원자가 한쪽 방향으로 이동한다.",
+      "전자가 여러 방향으로 무질서하게 움직인다.",
+      "전자가 도선 밖으로 빠져나간다."
+    ],
+    "answer": 3,
+    "exp": "전류가 흐르지 않을 때 전자는 여러 방향으로 무질서하게 움직이고, 전류가 흐를 때는 한쪽 방향으로 이동합니다.",
+    "id": "Q004"
+  },
+  {
+    "unit": "U2-1-01",
+    "type": "short",
+    "q": "도선에 전류가 흐를 때 도선 속에서 실제로 이동하는 입자는 무엇인지 쓰시오.",
+    "accept": [
+      "전자",
+      "자유전자"
+    ],
+    "answer": "전자",
+    "exp": "도선에서는 (-)전하를 띠는 전자가 이동하여 전류가 흐릅니다.",
+    "id": "Q005"
+  },
+  {
+    "unit": "U2-1-01",
+    "type": "essay",
+    "q": "전지를 연결한 도선에서 전류의 방향과 전자의 이동 방향을 전지의 극을 이용하여 비교해 서술하시오.",
+    "model": "전류는 전지의 (+)극에서 (-)극 쪽으로 흐르고, 전자는 전지의 (-)극에서 (+)극 쪽으로 이동하므로 두 방향은 서로 반대이다.",
+    "criteria": [
+      "전류의 방향을 전지의 극으로 설명했다.",
+      "전자의 이동 방향을 설명했다.",
+      "두 방향이 서로 반대임을 밝혔다."
+    ],
+    "keywords": [
+      [
+        "전류"
+      ],
+      [
+        "전자"
+      ],
+      [
+        "반대"
+      ]
+    ],
+    "exp": "",
+    "id": "Q006"
+  },
+  {
+    "unit": "U2-1-02",
+    "type": "ox",
+    "q": "1 A는 1000 mA와 같다.",
+    "answer": "O",
+    "exp": "1 A = 1000 mA입니다.",
+    "id": "Q007"
+  },
+  {
+    "unit": "U2-1-02",
+    "type": "ox",
+    "q": "전류계는 전류를 측정하려는 회로에 병렬로 연결한다.",
+    "answer": "X",
+    "exp": "전류계는 회로에 직렬로 연결합니다.",
+    "id": "Q008"
+  },
+  {
+    "unit": "U2-1-02",
+    "type": "mc",
+    "q": "전류계의 사용 방법으로 옳지 않은 것은?",
+    "options": [
+      "회로에 직렬로 연결한다.",
+      "(+)단자는 전지의 (+)극 쪽에 연결한다.",
+      "(-)단자는 전지의 (-)극 쪽에 연결한다.",
+      "전류의 세기를 예상할 수 없을 때는 가장 작은 값의 (-)단자부터 연결한다.",
+      "전류계를 전지에 직접 연결하지 않는다."
+    ],
+    "answer": 3,
+    "exp": "전류의 세기를 예상할 수 없을 때는 가장 큰 값의 (-)단자부터 연결합니다.",
+    "id": "Q009"
+  },
+  {
+    "unit": "U2-1-02",
+    "type": "mc",
+    "q": "250 mA를 A 단위로 옳게 나타낸 것은?",
+    "options": [
+      "0.0025 A",
+      "0.025 A",
+      "0.25 A",
+      "2.5 A",
+      "25 A"
+    ],
+    "answer": 2,
+    "exp": "1000 mA = 1 A이므로 250 mA = 0.25 A입니다.",
+    "id": "Q010"
+  },
+  {
+    "unit": "U2-1-02",
+    "type": "short",
+    "q": "전류의 세기를 나타내는 단위를 쓰시오.",
+    "accept": [
+      "A",
+      "암페어",
+      "A(암페어)",
+      "암페어(A)"
+    ],
+    "answer": "A",
+    "exp": "전류의 세기 단위는 A(암페어)입니다.",
+    "id": "Q011"
+  },
+  {
+    "unit": "U2-1-02",
+    "type": "essay",
+    "q": "전류의 세기를 예상할 수 없을 때 전류계의 (-)단자를 가장 큰 값의 단자부터 연결하는 까닭을 서술하시오.",
+    "model": "작은 값의 단자에 연결하면 측정 범위를 넘는 센 전류가 흘러 바늘이 눈금 범위를 벗어나고 전류계가 고장 날 수 있기 때문이다.",
+    "criteria": [
+      "측정 범위를 넘는 센 전류가 흐를 수 있음을 설명했다.",
+      "전류계가 고장 날 수 있음을 밝혔다."
+    ],
+    "keywords": [
+      [
+        "범위",
+        "넘",
+        "벗어",
+        "센전류",
+        "큰전류"
+      ],
+      [
+        "고장",
+        "망가",
+        "손상"
+      ]
+    ],
+    "exp": "",
+    "id": "Q012"
+  },
+  {
+    "unit": "U2-2-01",
+    "type": "ox",
+    "q": "전압은 전기 회로에서 전류를 흐르게 하는 능력이다.",
+    "answer": "O",
+    "exp": "전압은 전류를 흐르게 하는 능력입니다.",
+    "id": "Q013"
+  },
+  {
+    "unit": "U2-2-01",
+    "type": "ox",
+    "q": "전압의 단위는 A(암페어)이다.",
+    "answer": "X",
+    "exp": "전압의 단위는 V(볼트)입니다. A(암페어)는 전류의 세기 단위입니다.",
+    "id": "Q014"
+  },
+  {
+    "unit": "U2-2-01",
+    "type": "mc",
+    "q": "전압에 대한 설명으로 옳은 것은?",
+    "options": [
+      "단위는 Ω(옴)이다.",
+      "전류의 흐름을 방해하는 정도이다.",
+      "전하의 흐름이다.",
+      "같은 전구에 걸리는 전압이 클수록 전류가 약해진다.",
+      "전기 회로에서 전류를 흐르게 하는 능력이다."
+    ],
+    "answer": 4,
+    "exp": "전압은 전류를 흐르게 하는 능력이고 단위는 V(볼트)입니다. 전류의 흐름을 방해하는 정도는 저항입니다.",
+    "id": "Q015"
+  },
+  {
+    "unit": "U2-2-01",
+    "type": "mc",
+    "q": "전기 회로를 물의 흐름에 비유할 때, 짝 지은 것으로 옳지 않은 것은?",
+    "options": [
+      "펌프 – 전지",
+      "물의 흐름 – 전류",
+      "물의 높이 차 – 전압",
+      "물레방아 – 스위치",
+      "파이프 – 도선"
+    ],
+    "answer": 3,
+    "exp": "물레방아는 전구에 해당합니다. 스위치에 해당하는 것은 밸브입니다.",
+    "id": "Q016"
+  },
+  {
+    "unit": "U2-2-01",
+    "type": "short",
+    "q": "전압의 단위를 쓰시오.",
+    "accept": [
+      "V",
+      "볼트",
+      "V(볼트)",
+      "볼트(V)"
+    ],
+    "answer": "V",
+    "exp": "전압의 단위는 V(볼트)입니다.",
+    "id": "Q017"
+  },
+  {
+    "unit": "U2-2-01",
+    "type": "essay",
+    "q": "펌프가 물을 끌어올려 물의 높이 차를 유지하면 물이 계속 흐른다. 이를 전기 회로에 비유하여 전지의 역할을 서술하시오.",
+    "model": "펌프가 물의 높이 차를 유지하여 물이 계속 흐르게 하듯이, 전지는 전압을 유지하여 회로에 전류가 계속 흐르게 한다.",
+    "criteria": [
+      "전지가 전압을 유지함을 설명했다.",
+      "전류가 계속 흐르게 함을 설명했다."
+    ],
+    "keywords": [
+      [
+        "전압"
+      ],
+      [
+        "전류"
+      ]
+    ],
+    "exp": "",
+    "id": "Q018"
+  },
+  {
+    "unit": "U2-2-02",
+    "type": "ox",
+    "q": "전압계는 전압을 측정하려는 부분에 병렬로 연결한다.",
+    "answer": "O",
+    "exp": "전압계는 측정하려는 부분에 병렬로 연결합니다.",
+    "id": "Q019"
+  },
+  {
+    "unit": "U2-2-02",
+    "type": "ox",
+    "q": "전압계의 (+)단자는 전지의 (-)극 쪽에 연결한다.",
+    "answer": "X",
+    "exp": "전압계의 (+)단자는 전지의 (+)극 쪽에, (-)단자는 전지의 (-)극 쪽에 연결합니다.",
+    "id": "Q020"
+  },
+  {
+    "unit": "U2-2-02",
+    "type": "mc",
+    "q": "전류계와 전압계를 회로에 연결하는 방법으로 옳은 것은?",
+    "options": [
+      "전류계는 직렬, 전압계는 병렬로 연결한다.",
+      "전류계는 병렬, 전압계는 직렬로 연결한다.",
+      "전류계와 전압계 모두 직렬로 연결한다.",
+      "전류계와 전압계 모두 병렬로 연결한다.",
+      "연결 방법은 측정값과 관계가 없다."
+    ],
+    "answer": 0,
+    "exp": "전류계는 회로에 직렬로, 전압계는 측정하려는 부분에 병렬로 연결합니다.",
+    "id": "Q021"
+  },
+  {
+    "unit": "U2-2-02",
+    "type": "mc",
+    "q": "전압계의 사용 방법으로 옳지 않은 것은?",
+    "options": [
+      "측정하려는 부분에 병렬로 연결한다.",
+      "(+)단자는 전지의 (+)극 쪽에 연결한다.",
+      "(-)단자는 전지의 (-)극 쪽에 연결한다.",
+      "전압을 예상할 수 없을 때는 가장 큰 값의 (-)단자부터 연결한다.",
+      "연결한 (-)단자와 관계없이 항상 같은 눈금을 읽는다."
+    ],
+    "answer": 4,
+    "exp": "눈금은 연결한 (-)단자에 해당하는 것을 읽어야 합니다.",
+    "id": "Q022"
+  },
+  {
+    "unit": "U2-2-02",
+    "type": "short",
+    "q": "전기 회로에서 전압을 측정하는 기구의 이름을 쓰시오.",
+    "accept": [
+      "전압계"
+    ],
+    "answer": "전압계",
+    "exp": "전압은 전압계로 측정합니다.",
+    "id": "Q023"
+  },
+  {
+    "unit": "U2-2-02",
+    "type": "essay",
+    "q": "전구에 걸리는 전압을 측정하려고 한다. 전압계를 연결하는 방법을 연결 방식과 단자를 포함하여 서술하시오.",
+    "model": "전압계를 전구에 병렬로 연결하고, (+)단자는 전지의 (+)극 쪽에, (-)단자는 전지의 (-)극 쪽에 연결한다.",
+    "criteria": [
+      "병렬로 연결함을 밝혔다.",
+      "단자와 전지의 극을 연결하는 방법을 설명했다."
+    ],
+    "keywords": [
+      [
+        "병렬"
+      ],
+      [
+        "단자"
+      ]
+    ],
+    "exp": "",
+    "id": "Q024"
+  },
+  {
+    "unit": "U2-3-01",
+    "type": "ox",
+    "q": "전기 저항은 전류의 흐름을 방해하는 정도이다.",
+    "answer": "O",
+    "exp": "전기 저항은 전류의 흐름을 방해하는 정도를 나타냅니다.",
+    "id": "Q025"
+  },
+  {
+    "unit": "U2-3-01",
+    "type": "ox",
+    "q": "전기 저항의 단위는 V(볼트)이다.",
+    "answer": "X",
+    "exp": "전기 저항의 단위는 Ω(옴)입니다.",
+    "id": "Q026"
+  },
+  {
+    "unit": "U2-3-01",
+    "type": "mc",
+    "q": "전기 저항에 대한 설명으로 옳지 않은 것은?",
+    "options": [
+      "전류의 흐름을 방해하는 정도이다.",
+      "단위는 Ω(옴)이다.",
+      "저항이 클수록 같은 전압에서 전류가 세게 흐른다.",
+      "물질의 종류에 따라 저항의 크기가 다르다.",
+      "전자가 이동하면서 원자와 충돌하기 때문에 생긴다."
+    ],
+    "answer": 2,
+    "exp": "저항이 클수록 전류의 흐름을 더 많이 방해하므로 같은 전압에서 전류가 약하게 흐릅니다.",
+    "id": "Q027"
+  },
+  {
+    "unit": "U2-3-01",
+    "type": "mc",
+    "q": "1 V의 전압을 걸었을 때 1 A의 전류가 흐르는 도선의 저항은?",
+    "options": [
+      "0.1 Ω",
+      "1 Ω",
+      "10 Ω",
+      "100 Ω",
+      "1000 Ω"
+    ],
+    "answer": 1,
+    "exp": "1 V의 전압에서 1 A의 전류가 흐를 때의 저항이 1 Ω입니다.",
+    "id": "Q028"
+  },
+  {
+    "unit": "U2-3-01",
+    "type": "short",
+    "q": "전기 저항은 도선 속을 이동하는 전자가 무엇과 충돌하기 때문에 생기는지 쓰시오.",
+    "accept": [
+      "원자"
+    ],
+    "answer": "원자",
+    "exp": "전자가 이동하면서 원자와 충돌하여 이동에 방해를 받습니다.",
+    "id": "Q029"
+  },
+  {
+    "unit": "U2-3-01",
+    "type": "essay",
+    "q": "도선에 전류가 흐를 때 전기 저항이 생기는 까닭을 서술하시오.",
+    "model": "도선 속을 이동하는 전자가 원자와 충돌하여 이동에 방해를 받기 때문이다.",
+    "criteria": [
+      "전자의 이동을 언급했다.",
+      "원자를 언급했다.",
+      "충돌(방해)을 설명했다."
+    ],
+    "keywords": [
+      [
+        "전자"
+      ],
+      [
+        "원자"
+      ],
+      [
+        "충돌",
+        "부딪",
+        "방해"
+      ]
+    ],
+    "exp": "",
+    "id": "Q030"
+  },
+  {
+    "unit": "U2-3-02",
+    "type": "ox",
+    "q": "저항이 일정할 때 전류의 세기는 전압에 비례한다.",
+    "answer": "O",
+    "exp": "옴의 법칙: 전류의 세기는 전압에 비례하고 저항에 반비례합니다.",
+    "id": "Q031"
+  },
+  {
+    "unit": "U2-3-02",
+    "type": "ox",
+    "q": "전압이 일정할 때 저항이 2배가 되면 전류의 세기도 2배가 된다.",
+    "answer": "X",
+    "exp": "전압이 일정할 때 전류의 세기는 저항에 반비례하므로 1/2배가 됩니다.",
+    "id": "Q032"
+  },
+  {
+    "unit": "U2-3-02",
+    "type": "mc",
+    "q": "저항이 5 Ω인 니크롬선에 10 V의 전압을 걸었을 때 흐르는 전류의 세기는?",
+    "options": [
+      "0.5 A",
+      "2 A",
+      "5 A",
+      "15 A",
+      "50 A"
+    ],
+    "answer": 1,
+    "exp": "전류 = 전압 ÷ 저항 = 10 V ÷ 5 Ω = 2 A입니다.",
+    "id": "Q033"
+  },
+  {
+    "unit": "U2-3-02",
+    "type": "mc",
+    "q": "어떤 저항에 3 V의 전압을 걸었더니 0.5 A의 전류가 흘렀다. 이 저항의 크기는?",
+    "options": [
+      "0.17 Ω",
+      "1.5 Ω",
+      "3.5 Ω",
+      "6 Ω",
+      "15 Ω"
+    ],
+    "answer": 3,
+    "exp": "저항 = 전압 ÷ 전류 = 3 V ÷ 0.5 A = 6 Ω입니다.",
+    "id": "Q034"
+  },
+  {
+    "unit": "U2-3-02",
+    "type": "short",
+    "q": "20 Ω인 저항에 0.2 A의 전류가 흐를 때 저항에 걸리는 전압은 몇 V인지 쓰시오.",
+    "accept": [
+      "4",
+      "4V",
+      "4볼트"
+    ],
+    "answer": "4",
+    "exp": "전압 = 전류 × 저항 = 0.2 A × 20 Ω = 4 V입니다.",
+    "id": "Q035"
+  },
+  {
+    "unit": "U2-3-02",
+    "type": "essay",
+    "q": "전압을 일정하게 유지하고 저항을 10 Ω, 5 Ω, 2 Ω, 1 Ω으로 바꾸면서 전류의 세기를 측정하였다. 저항과 전류의 세기 사이의 관계를 서술하시오.",
+    "model": "전압이 일정할 때 전류의 세기는 저항에 반비례한다. 즉, 저항이 작아질수록 전류의 세기가 커진다(전류의 세기는 1/저항에 비례한다).",
+    "criteria": [
+      "전류와 저항의 관계임을 밝혔다.",
+      "반비례 관계(저항이 작을수록 전류가 셈)를 설명했다."
+    ],
+    "keywords": [
+      [
+        "전류"
+      ],
+      [
+        "반비례",
+        "역수",
+        "1/저항",
+        "작아질수록",
+        "작을수록",
+        "커질수록",
+        "클수록"
+      ]
+    ],
+    "exp": "",
+    "id": "Q036"
+  },
+  {
+    "unit": "U2-4-01",
+    "type": "ox",
+    "q": "저항을 직렬로 많이 연결할수록 회로 전체의 저항은 커진다.",
+    "answer": "O",
+    "exp": "직렬연결에서는 저항을 연결할수록 전체 저항이 커집니다.",
+    "id": "Q037"
+  },
+  {
+    "unit": "U2-4-01",
+    "type": "ox",
+    "q": "직렬로 연결된 전구 중 하나의 필라멘트가 끊어져도 나머지 전구는 계속 켜진다.",
+    "answer": "X",
+    "exp": "직렬연결은 전류가 흐르는 길이 하나이므로 하나가 끊어지면 모두 꺼집니다.",
+    "id": "Q038"
+  },
+  {
+    "unit": "U2-4-01",
+    "type": "mc",
+    "q": "저항 2개를 직렬로 연결한 회로에서 전체 전압이 6 V이고, 한 저항에 걸리는 전압이 2 V이다. 다른 저항에 걸리는 전압은?",
+    "options": [
+      "2 V",
+      "3 V",
+      "4 V",
+      "6 V",
+      "8 V"
+    ],
+    "answer": 2,
+    "exp": "직렬연결에서 각 저항에 걸리는 전압의 합은 전체 전압과 같으므로 6 V − 2 V = 4 V입니다.",
+    "id": "Q039"
+  },
+  {
+    "unit": "U2-4-01",
+    "type": "mc",
+    "q": "저항의 직렬연결에 대한 설명으로 옳은 것은?",
+    "options": [
+      "각 저항에 걸리는 전압은 전체 전압과 같다.",
+      "저항을 많이 연결할수록 전체 저항이 작아진다.",
+      "한 저항이 끊어져도 나머지 저항에는 전류가 흐른다.",
+      "각 저항에 흐르는 전류의 세기는 같다.",
+      "가정의 전기 기구들이 연결된 방식이다."
+    ],
+    "answer": 3,
+    "exp": "직렬연결에서는 전류가 흐르는 길이 하나이므로 각 저항에 흐르는 전류의 세기가 같습니다.",
+    "id": "Q040"
+  },
+  {
+    "unit": "U2-4-01",
+    "type": "short",
+    "q": "여러 개의 저항을 한 줄로 이어서 연결하는 방법을 무엇이라고 하는지 쓰시오.",
+    "accept": [
+      "직렬연결",
+      "직렬"
+    ],
+    "answer": "직렬연결",
+    "exp": "저항을 한 줄로 연결하는 방법은 직렬연결입니다.",
+    "id": "Q041"
+  },
+  {
+    "unit": "U2-4-01",
+    "type": "essay",
+    "q": "전구 2개를 직렬로 연결한 회로에서 전구 1개의 필라멘트가 끊어지면 나머지 전구는 어떻게 되는지 까닭과 함께 서술하시오.",
+    "model": "직렬연결은 전류가 흐르는 길이 하나뿐이므로, 한 전구가 끊어지면 회로 전체에 전류가 흐르지 않아 나머지 전구도 꺼진다.",
+    "criteria": [
+      "나머지 전구가 꺼짐을 밝혔다.",
+      "전류가 흐르지 않기 때문임을 설명했다."
+    ],
+    "keywords": [
+      [
+        "꺼",
+        "켜지지않",
+        "들어오지않"
+      ],
+      [
+        "전류"
+      ]
+    ],
+    "exp": "",
+    "id": "Q042"
+  },
+  {
+    "unit": "U2-4-02",
+    "type": "ox",
+    "q": "저항을 병렬로 연결하면 각 저항에 걸리는 전압은 같다.",
+    "answer": "O",
+    "exp": "병렬연결에서는 각 저항에 걸리는 전압이 전체 전압과 같습니다.",
+    "id": "Q043"
+  },
+  {
+    "unit": "U2-4-02",
+    "type": "ox",
+    "q": "저항을 병렬로 많이 연결할수록 회로 전체의 저항은 커진다.",
+    "answer": "X",
+    "exp": "병렬연결에서는 저항을 연결할수록 전체 저항이 작아집니다.",
+    "id": "Q044"
+  },
+  {
+    "unit": "U2-4-02",
+    "type": "mc",
+    "q": "저항의 병렬연결을 이용한 예로 옳은 것은?",
+    "options": [
+      "멀티탭",
+      "퓨즈",
+      "누전 차단기",
+      "하나가 꺼지면 모두 꺼지는 장식용 전구",
+      "회로에 연결한 전류계"
+    ],
+    "answer": 0,
+    "exp": "멀티탭에 꽂은 전기 기구들은 병렬로 연결됩니다. 퓨즈, 누전 차단기, 전류계는 회로에 직렬로 연결됩니다.",
+    "id": "Q045"
+  },
+  {
+    "unit": "U2-4-02",
+    "type": "mc",
+    "q": "6 V의 전원에 3 Ω과 6 Ω인 저항을 병렬로 연결하였다. 3 Ω인 저항에 흐르는 전류의 세기는?",
+    "options": [
+      "0.5 A",
+      "1 A",
+      "2 A",
+      "3 A",
+      "18 A"
+    ],
+    "answer": 2,
+    "exp": "병렬연결에서는 각 저항에 6 V가 걸리므로 6 V ÷ 3 Ω = 2 A입니다.",
+    "id": "Q046"
+  },
+  {
+    "unit": "U2-4-02",
+    "type": "short",
+    "q": "가정에서 사용하는 전기 기구들은 서로 어떤 방법으로 연결되어 있는지 쓰시오.",
+    "accept": [
+      "병렬연결",
+      "병렬"
+    ],
+    "answer": "병렬연결",
+    "exp": "가정의 전기 기구들은 병렬로 연결되어 있습니다.",
+    "id": "Q047"
+  },
+  {
+    "unit": "U2-4-02",
+    "type": "essay",
+    "q": "가정에서 전기 기구들을 병렬로 연결하여 사용하는 까닭을 전압과 관련지어 서술하시오.",
+    "model": "병렬로 연결하면 각 전기 기구에 같은 전압이 걸리고, 한 전기 기구를 꺼도 다른 전기 기구에는 전류가 흘러 따로 사용할 수 있기 때문이다.",
+    "criteria": [
+      "각 전기 기구에 같은 전압이 걸림을 설명했다.",
+      "다른 전기 기구를 따로 사용할 수 있음을 설명했다."
+    ],
+    "keywords": [
+      [
+        "전압"
+      ],
+      [
+        "다른",
+        "따로",
+        "나머지",
+        "각각"
+      ]
+    ],
+    "exp": "",
+    "id": "Q048"
+  }
+];
+
+/* ============================ 앱 코드 ============================ */
+const TYPE_LABEL = { ox: "OX퀴즈", mc: "5지선다형", short: "단답형", essay: "서술형" };
+const TYPE_ORDER = ["ox", "mc", "short", "essay"];
+const CIRCLED = ["①", "②", "③", "④", "⑤"];
+const app = document.getElementById("app");
+
+const PATH = {};
+const SMALL_IDS = [];
+UNITS.forEach(function (large) {
+  large.children.forEach(function (mid) {
+    mid.children.forEach(function (small) {
+      PATH[small.id] = { large: large.title, mid: mid.title, small: small.title };
+      SMALL_IDS.push(small.id);
+    });
+  });
+});
+
+const sel = { units: new Set(SMALL_IDS), types: new Set(TYPE_ORDER), count: "all", shuffle: true };
+let session = null;
+
+function el(tag, props) {
+  const e = document.createElement(tag);
+  if (props) {
+    Object.keys(props).forEach(function (k) {
+      const v = props[k];
+      if (k === "class") { e.className = v; }
+      else if (k === "text") { e.textContent = v; }
+      else if (k.indexOf("on") === 0) { e.addEventListener(k.slice(2), v); }
+      else if (v === true) { e.setAttribute(k, ""); }
+      else if (v !== false && v != null) { e.setAttribute(k, v); }
+    });
+  }
+  for (let i = 2; i < arguments.length; i++) {
+    const kid = arguments[i];
+    if (kid == null) { continue; }
+    if (Array.isArray(kid)) { kid.forEach(function (c) { if (c != null) { e.appendChild(c); } }); }
+    else if (typeof kid === "string") { e.appendChild(document.createTextNode(kid)); }
+    else { e.appendChild(kid); }
+  }
+  return e;
+}
+
+function countFor(unitIds) {
+  return QUESTIONS.filter(function (q) { return unitIds.indexOf(q.unit) >= 0 && sel.types.has(q.type); }).length;
+}
+
+function shuffled(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function norm(s) {
+  return String(s).toLowerCase().replace(/\s+/g, "").replace(/[.,。]$/g, "");
+}
+
+/* ---------------------------- 시작 화면 ---------------------------- */
+function renderHome() {
+  app.innerHTML = "";
+  app.appendChild(el("h1", { text: "형성평가" }));
+  app.appendChild(el("div", { class: "sub", text: "단원과 문항 유형을 고른 뒤 시작하세요." }));
+
+  const unitCard = el("div", { class: "card" }, el("h2", { text: "단원 선택" }));
+  UNITS.forEach(function (large) {
+    const allIds = [];
+    large.children.forEach(function (m) { m.children.forEach(function (s) { allIds.push(s.id); }); });
+    const allOn = allIds.every(function (id) { return sel.units.has(id); });
+    unitCard.appendChild(el("label", { class: "chk" },
+      el("input", { type: "checkbox", checked: allOn, onchange: function (ev) {
+        allIds.forEach(function (id) { if (ev.target.checked) { sel.units.add(id); } else { sel.units.delete(id); } });
+        renderHome();
+      } }),
+      el("strong", { text: "대단원 " + large.title }),
+      el("span", { class: "count", text: countFor(allIds) + "문항" })
+    ));
+    large.children.forEach(function (mid) {
+      const ids = mid.children.map(function (s) { return s.id; });
+      const midOn = ids.every(function (id) { return sel.units.has(id); });
+      unitCard.appendChild(el("label", { class: "chk tree-mid" },
+        el("input", { type: "checkbox", checked: midOn, onchange: function (ev) {
+          ids.forEach(function (id) { if (ev.target.checked) { sel.units.add(id); } else { sel.units.delete(id); } });
+          renderHome();
+        } }),
+        el("span", { text: mid.title }),
+        el("span", { class: "count", text: countFor(ids) + "문항" })
+      ));
+      mid.children.forEach(function (small) {
+        unitCard.appendChild(el("label", { class: "chk tree-small" },
+          el("input", { type: "checkbox", checked: sel.units.has(small.id), onchange: function (ev) {
+            if (ev.target.checked) { sel.units.add(small.id); } else { sel.units.delete(small.id); }
+            renderHome();
+          } }),
+          el("span", { text: small.title }),
+          el("span", { class: "count", text: countFor([small.id]) + "문항" })
+        ));
+      });
+    });
+  });
+  app.appendChild(unitCard);
+
+  const typeCard = el("div", { class: "card" }, el("h2", { text: "문항 유형" }));
+  const typeRow = el("div", { class: "row" });
+  TYPE_ORDER.forEach(function (t) {
+    typeRow.appendChild(el("label", { class: "chk" },
+      el("input", { type: "checkbox", checked: sel.types.has(t), onchange: function (ev) {
+        if (ev.target.checked) { sel.types.add(t); } else { sel.types.delete(t); }
+        renderHome();
+      } }),
+      el("span", { text: TYPE_LABEL[t] })
+    ));
+  });
+  typeCard.appendChild(typeRow);
+  app.appendChild(typeCard);
+
+  const optCard = el("div", { class: "card" }, el("h2", { text: "출제 설정" }));
+  const optRow = el("div", { class: "row" });
+  [["all", "전체"], ["10", "10문항"], ["20", "20문항"]].forEach(function (pair) {
+    optRow.appendChild(el("label", { class: "chk" },
+      el("input", { type: "radio", name: "cnt", checked: sel.count === pair[0], onchange: function () { sel.count = pair[0]; } }),
+      el("span", { text: pair[1] })
+    ));
+  });
+  optRow.appendChild(el("label", { class: "chk" },
+    el("input", { type: "checkbox", checked: sel.shuffle, onchange: function (ev) { sel.shuffle = ev.target.checked; } }),
+    el("span", { text: "문항 순서 섞기" })
+  ));
+  optCard.appendChild(optRow);
+  app.appendChild(optCard);
+
+  const total = countFor(Array.from(sel.units));
+  app.appendChild(el("div", { class: "actions" },
+    el("span", { class: "sub", text: "선택한 조건의 문항: " + total + "개" }),
+    el("button", { class: "primary", disabled: total === 0, onclick: function () {
+      let list = QUESTIONS.filter(function (q) { return sel.units.has(q.unit) && sel.types.has(q.type); });
+      if (sel.shuffle) { list = shuffled(list); }
+      if (sel.count !== "all") { list = list.slice(0, Number(sel.count)); }
+      startSession(list);
+    }, text: "평가 시작" })
+  ));
+}
+
+/* ---------------------------- 문항 화면 ---------------------------- */
+function startSession(list) {
+  session = { list: list, idx: 0, results: [] };
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = session.list[session.idx];
+  const p = PATH[q.unit];
+  let response = null;
+  let graded = false;
+  app.innerHTML = "";
+
+  app.appendChild(el("div", { class: "actions" },
+    el("span", { class: "sub", text: (session.idx + 1) + " / " + session.list.length }),
+    el("button", { class: "link", onclick: function () { if (confirm("평가를 그만두고 처음 화면으로 돌아갈까요?")) { renderHome(); } }, text: "그만두기" })
+  ));
+  app.appendChild(el("div", { class: "progress" }, el("div", { style: "width:" + (session.idx / session.list.length * 100) + "%" })));
+
+  const card = el("div", { class: "card" });
+  card.appendChild(el("div", null,
+    el("span", { class: "badge type", text: TYPE_LABEL[q.type] }),
+    el("span", { class: "sub", text: p.large + " > " + p.mid + " > " + p.small })
+  ));
+  card.appendChild(el("div", { class: "qtext", text: q.q }));
+
+  const inputArea = el("div");
+  const fbArea = el("div");
+  const checkBtn = el("button", { class: "primary", disabled: true, text: "정답 확인" });
+  const optBtns = [];
+  let field = null;
+
+  function setResponse(v) {
+    response = v;
+    checkBtn.disabled = (v === null || v === "");
+  }
+
+  if (q.type === "ox" || q.type === "mc") {
+    const labels = q.type === "ox" ? ["O", "X"] : q.options.map(function (o, i) { return CIRCLED[i] + " " + o; });
+    const values = q.type === "ox" ? ["O", "X"] : [0, 1, 2, 3, 4];
+    const wrap = el("div", { class: q.type === "ox" ? "oxwrap" : "" });
+    labels.forEach(function (lab, i) {
+      const b = el("button", { class: "opt", text: lab, onclick: function () {
+        if (graded) { return; }
+        optBtns.forEach(function (x) { x.classList.remove("sel"); });
+        b.classList.add("sel");
+        setResponse(values[i]);
+      } });
+      b.dataset.value = String(values[i]);
+      optBtns.push(b);
+      wrap.appendChild(b);
+    });
+    inputArea.appendChild(wrap);
+  } else if (q.type === "short") {
+    field = el("input", { type: "text", placeholder: "답을 입력하세요", oninput: function (ev) { setResponse(ev.target.value.trim()); } });
+    field.addEventListener("keydown", function (ev) { if (ev.key === "Enter" && !checkBtn.disabled && !graded) { grade(); } });
+    inputArea.appendChild(field);
+  } else {
+    field = el("textarea", { placeholder: "답안을 서술하세요", oninput: function (ev) { setResponse(ev.target.value.trim()); } });
+    inputArea.appendChild(field);
+  }
+
+  function grade() {
+    graded = true;
+    checkBtn.style.display = "none";
+    if (field) { field.disabled = true; }
+    const record = { q: q, response: response, correct: false };
+    let answerText = "";
+
+    if (q.type === "ox" || q.type === "mc") {
+      record.correct = (response === q.answer);
+      optBtns.forEach(function (b) {
+        b.disabled = true;
+        if (b.dataset.value === String(q.answer)) { b.classList.add("right"); }
+        else if (b.dataset.value === String(response)) { b.classList.add("wrong"); }
+      });
+      answerText = q.type === "ox" ? q.answer : CIRCLED[q.answer] + " " + q.options[q.answer];
+    } else if (q.type === "short") {
+      const r = norm(response);
+      record.correct = q.accept.some(function (a) { return norm(a) === r; });
+      answerText = q.accept[0];
+    } else {
+      const r = norm(response);
+      record.matched = q.keywords.map(function (group) {
+        return group.some(function (k) { return r.indexOf(norm(k)) >= 0; });
+      });
+      record.correct = record.matched.every(function (m) { return m; });
+    }
+    session.results.push(record);
+
+    const fb = el("div", { class: "fb " + (record.correct ? "ok" : "no") });
+    const verdict = el("div", { class: "verdict", text: record.correct ? "정답입니다." : "오답입니다." });
+    fb.appendChild(verdict);
+
+    if (q.type === "essay") {
+      verdict.textContent = record.correct ? "채점 기준을 모두 충족했습니다. (핵심어 기준 자동 판정)" : "채점 기준 중 빠진 내용이 있습니다. (핵심어 기준 자동 판정)";
+      fb.appendChild(el("div", null, el("strong", { text: "모범 답안: " }), q.model));
+      const ul = el("ul", { class: "crit" });
+      q.criteria.forEach(function (c, i) {
+        ul.appendChild(el("li", { text: (record.matched[i] ? "[충족] " : "[미충족] ") + c }));
+      });
+      fb.appendChild(ul);
+      fb.appendChild(el("div", { class: "sub", text: "자동 판정은 핵심어 포함 여부만 확인합니다. 모범 답안과 비교하여 최종 결과를 직접 정할 수 있습니다." }));
+      const selfRow = el("div", { class: "row", style: "margin-top:8px" });
+      function setSelf(v) {
+        record.correct = v;
+        fb.className = "fb " + (v ? "ok" : "no");
+        verdict.textContent = v ? "정답으로 처리했습니다." : "오답으로 처리했습니다.";
+      }
+      selfRow.appendChild(el("button", { onclick: function () { setSelf(true); }, text: "정답으로 처리" }));
+      selfRow.appendChild(el("button", { onclick: function () { setSelf(false); }, text: "오답으로 처리" }));
+      fb.appendChild(selfRow);
+    } else {
+      fb.appendChild(el("div", null, el("strong", { text: "정답: " }), answerText));
+    }
+    if (q.exp) { fb.appendChild(el("div", null, el("strong", { text: "해설: " }), q.exp)); }
+    fbArea.appendChild(fb);
+
+    const last = session.idx === session.list.length - 1;
+    fbArea.appendChild(el("div", { class: "actions" }, el("span"),
+      el("button", { class: "primary", onclick: function () {
+        if (last) { renderResult(); } else { session.idx += 1; renderQuestion(); }
+      }, text: last ? "결과 보기" : "다음 문항" })
+    ));
+  }
+
+  checkBtn.addEventListener("click", grade);
+  card.appendChild(inputArea);
+  card.appendChild(fbArea);
+  card.appendChild(el("div", { class: "actions" }, el("span"), checkBtn));
+  app.appendChild(card);
+  if (field) { field.focus(); }
+}
+
+/* ---------------------------- 결과 화면 ---------------------------- */
+function tally(keyFn) {
+  const map = {};
+  session.results.forEach(function (r) {
+    const k = keyFn(r.q);
+    if (!map[k]) { map[k] = { total: 0, correct: 0 }; }
+    map[k].total += 1;
+    if (r.correct) { map[k].correct += 1; }
+  });
+  return map;
+}
+
+function statTable(title, keys, labelFn, map) {
+  const tbl = el("table", null,
+    el("tr", null, el("th", { text: title }), el("th", { class: "num", text: "정답 / 문항" }), el("th", { class: "num", text: "정답률" }))
+  );
+  keys.forEach(function (k) {
+    if (!map[k]) { return; }
+    tbl.appendChild(el("tr", null,
+      el("td", { text: labelFn(k) }),
+      el("td", { class: "num", text: map[k].correct + " / " + map[k].total }),
+      el("td", { class: "num", text: Math.round(map[k].correct / map[k].total * 100) + "%" })
+    ));
+  });
+  return tbl;
+}
+
+function renderResult() {
+  const total = session.results.length;
+  const correct = session.results.filter(function (r) { return r.correct; }).length;
+  const wrong = session.results.filter(function (r) { return !r.correct; });
+  app.innerHTML = "";
+  app.appendChild(el("h1", { text: "평가 결과" }));
+  app.appendChild(el("div", { class: "card" },
+    el("div", { class: "score", text: correct + " / " + total }),
+    el("div", { class: "sub", text: "정답률 " + Math.round(correct / total * 100) + "%" })
+  ));
+  app.appendChild(el("div", { class: "card" }, el("h2", { text: "소단원별 결과" }),
+    statTable("소단원", SMALL_IDS, function (id) { return PATH[id].mid + " > " + PATH[id].small; }, tally(function (q) { return q.unit; }))
+  ));
+  app.appendChild(el("div", { class: "card" }, el("h2", { text: "유형별 결과" }),
+    statTable("유형", TYPE_ORDER, function (t) { return TYPE_LABEL[t]; }, tally(function (q) { return q.type; }))
+  ));
+
+  if (wrong.length > 0) {
+    const rv = el("div", { class: "card" }, el("h2", { text: "틀린 문항 다시 보기 (" + wrong.length + "개)" }));
+    wrong.forEach(function (r) {
+      const q = r.q;
+      let ans = "";
+      if (q.type === "ox") { ans = q.answer; }
+      else if (q.type === "mc") { ans = CIRCLED[q.answer] + " " + q.options[q.answer]; }
+      else if (q.type === "short") { ans = q.accept[0]; }
+      else { ans = q.model; }
+      let mine = r.response;
+      if (q.type === "mc") { mine = CIRCLED[r.response] + " " + q.options[r.response]; }
+      rv.appendChild(el("div", { class: "review" },
+        el("div", null, el("span", { class: "badge type", text: TYPE_LABEL[q.type] }), el("span", { class: "sub", text: PATH[q.unit].small })),
+        el("div", null, el("strong", { text: q.q })),
+        el("div", { text: "내 답: " + mine }),
+        el("div", { text: (q.type === "essay" ? "모범 답안: " : "정답: ") + ans }),
+        q.exp ? el("div", { class: "sub", text: "해설: " + q.exp }) : null
+      ));
+    });
+    app.appendChild(rv);
+  }
+
+  app.appendChild(el("div", { class: "actions" },
+    el("button", { onclick: renderHome, text: "처음으로" }),
+    wrong.length > 0 ? el("button", { class: "primary", onclick: function () {
+      startSession(wrong.map(function (r) { return r.q; }));
+    }, text: "틀린 문항 다시 풀기" }) : el("span")
+  ));
+}
+
+renderHome();
+</script>
+</body>
+</html>
